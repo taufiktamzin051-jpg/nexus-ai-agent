@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Autopilot Business Agent Cockpit</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        cyber: {
+                            primary: '#06b6d4',   /* Neon Cyan */
+                            secondary: '#a855f7', /* Neon Purple */
+                            success: '#22c55e',   /* Bright Green */
+                            danger: '#ef4444',    /* Bright Red */
+                            warn: '#eab308'       /* Bright Yellow */
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Space Grotesk', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- CSS Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        .cyber-glow {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+        }
+        .cyber-glow-success {
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+        }
+        .cyber-glow-purple {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.15);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .animate-blink {
+            animation: blink 1.5s infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen antialiased custom-scrollbar">
+
+<div id="app" v-cloak class="p-4 md:p-6 max-w-[1600px] mx-auto flex flex-col gap-5">
+    
+    <!-- HEADER BRANDING -->
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900 border border-slate-800 rounded-xl p-4 md:px-6 md:py-4 gap-4 cyber-glow">
+        <div class="flex items-center gap-3">
+            <div class="bg-gradient-to-tr from-cyber-primary to-cyber-secondary p-2.5 rounded-lg text-slate-950">
+                <i class="fa-solid fa-robot text-2xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-black tracking-tight flex items-center gap-2 text-transparent bg-clip-text bg-gradient-to-r from-cyber-primary to-slate-100">
+                    NEXUS AI BUSINESS AGENT COCKPIT
+                </h1>
+                <p class="text-xs text-slate-400 font-mono">Autopilot Digital Store Assistant & Client Prospect Hunter</p>
+            </div>
+        </div>
+        
+        <!-- Quick Global Status -->
+        <div class="flex flex-wrap gap-2 md:gap-3 items-center">
+            <span class="flex items-center gap-1.5 text-xs bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 font-mono">
+                <span class="w-2.5 h-2.5 rounded-full" :class="apiKey ? 'bg-cyber-success' : 'bg-cyber-danger animate-pulse'"></span>
+                Gemini: {{ apiKey ? 'Aktif' : 'Unconfigured' }}
+            </span>
+            <span class="flex items-center gap-1.5 text-xs bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 font-mono">
+                <span class="w-2.5 h-2.5 rounded-full" :class="lynkShopUrl ? 'bg-cyber-success' : 'bg-cyber-warn animate-pulse'"></span>
+                Store Limit: {{ lynkShopUrl ? 'Linked' : 'Offline Mode' }}
+            </span>
+            <div class="flex items-center gap-2">
+                <button 
+                    @click="toggleAutopilot" 
+                    class="font-mono text-xs font-black uppercase px-4 py-2 rounded-lg transition-all duration-300 shadow cursor-pointer"
+                    :class="autopilotActive ? 'bg-cyber-success text-slate-950 cyber-glow-success animate-pulse' : 'bg-slate-700 hover:bg-slate-600 text-slate-100'"
+                >
+                    <i class="fa-solid" :class="autopilotActive ? 'fa-circle-play animate-spin' : 'fa-play'"></i> 
+                    {{ autopilotActive ? 'Autopilot Active' : 'Mulai Autopilot' }}
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- TOP CONFIGURATION & CREDENTIAL PANEL (COLLAPSIBLE / TOGGLE) -->
+    <section class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5">
+        <div class="flex justify-between items-center mb-4 cursor-pointer" @click="showConfig = !showConfig">
+            <h2 class="text-sm font-bold tracking-wider text-cyber-primary flex items-center gap-2 font-mono">
+                <i class="fa-solid fa-sliders"></i> KREDENSIAL & LYNK.ID INTEGRASI
+            </h2>
+            <button class="text-slate-400 hover:text-slate-200">
+                <i class="fa-solid text-sm" :class="showConfig ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            </button>
+        </div>
+
+        <div v-show="showConfig" class="grid grid-cols-1 md:grid-cols-2 gap-4 transition-all duration-300">
+            <!-- Gemini Secret Column -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-bold text-slate-400 font-mono">GOOGLE GEMINI API KEY <span class="text-cyber-secondary font-sans">(Wajib untuk respon AI yang nyata)</span></label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                        <i class="fa-solid fa-key"></i>
+                    </span>
+                    <input 
+                        v-model="apiKey"
+                        :type="showApiKey ? 'text' : 'password'"
+                        placeholder="Masukkan AI Studio / Gemini API Key (e.g. AIzaSy...)" 
+                        class="w-full bg-slate-950 text-slate-200 text-xs rounded-lg pl-10 pr-10 py-3 border border-slate-800 focus:border-cyber-primary focus:outline-none font-mono"
+                        @change="saveCredentials"
+                    >
+                    <button 
+                        @click="showApiKey = !showApiKey"
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-200 cursor-pointer"
+                    >
+                        <i class="fa-solid" :class="showApiKey ? 'fa-eye-slash' : 'fa-eye'"></i>
+                    </button>
+                </div>
+                <p class="text-[10px] text-slate-500 font-mono">Kunci API disimpan secara aman di browser localstorage Anda.</p>
+            </div>
+
+            <!-- Lynk.id Shop Link Column -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-bold text-slate-400 font-mono">LINK TOKO DIGITAL LYNK.ID <span class="text-cyber-primary font-sans">(E-Store Checkout)</span></label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                        <i class="fa-solid fa-store"></i>
+                    </span>
+                    <input 
+                        v-model="lynkShopUrl"
+                        type="url"
+                        placeholder="https://lynk.id/toko_anda" 
+                        class="w-full bg-slate-950 text-slate-200 text-xs rounded-lg pl-10 py-3 border border-slate-800 focus:border-cyber-primary focus:outline-none font-mono"
+                        @change="saveCredentials"
+                    >
+                </div>
+                <p class="text-[10px] text-slate-500 font-mono">Link toko Lynk.id aktif untuk mengalihkan rujukan transaksi digital otomatis.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN STATISTICS BAR -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Revenue Card -->
+        <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-4 rounded-xl flex items-center justify-between cyber-glow-success">
+            <div class="flex flex-col gap-1">
+                <span class="text-[11px] text-slate-400 font-mono font-bold tracking-wider">TOTAL REVENUE (SIMULAR)</span>
+                <span class="text-lg md:text-2xl font-black font-mono text-cyber-success">Rp {{ formatNumber(totalEarnings) }}</span>
+            </div>
+            <div class="bg-cyber-success/10 p-2.5 rounded-lg border border-cyber-success/30 text-cyber-success">
+                <i class="fa-solid fa-wallet text-xl"></i>
+            </div>
+        </div>
+
+        <!-- Success Sales Card -->
+        <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-4 rounded-xl flex items-center justify-between cyber-glow">
+            <div class="flex flex-col gap-1">
+                <span class="text-[11px] text-slate-400 font-mono font-bold tracking-wider">SALES SUKSES</span>
+                <span class="text-lg md:text-2xl font-black font-mono text-cyber-primary">{{ transactions.length }} Unit</span>
+            </div>
+            <div class="bg-cyber-primary/10 p-2.5 rounded-lg border border-cyber-primary/30 text-cyber-primary">
+                <i class="fa-solid fa-cart-shopping text-xl"></i>
+            </div>
+        </div>
+
+        <!-- Digital Product Active -->
+        <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-4 rounded-xl flex items-center justify-between cyber-glow-purple">
+            <div class="flex flex-col gap-1">
+                <span class="text-[11px] text-slate-400 font-mono font-bold tracking-wider">AKUMULASI INVENTORI</span>
+                <span class="text-lg md:text-2xl font-black font-mono text-cyber-secondary">{{ products.length }} Produk</span>
+            </div>
+            <div class="bg-cyber-secondary/10 p-2.5 rounded-lg border border-cyber-secondary/30 text-cyber-secondary">
+                <i class="fa-solid fa-boxes-stacked text-xl"></i>
+            </div>
+        </div>
+
+        <!-- Auto-Reply Conversion Ratio -->
+        <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-4 rounded-xl flex items-center justify-between">
+            <div class="flex flex-col gap-1">
+                <span class="text-[11px] text-slate-400 font-mono font-bold tracking-wider">AUTOPILOT CONVERSION</span>
+                <span class="text-lg md:text-2xl font-black font-mono text-purple-400">100%</span>
+            </div>
+            <div class="bg-purple-400/10 p-2.5 rounded-lg border border-purple-400/30 text-purple-400">
+                <i class="fa-solid fa-circle-check text-xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- WORKSPACE TABS SELECTOR -->
+    <div class="flex border-b border-slate-800 font-mono text-xs font-bold gap-1 overflow-x-auto custom-scrollbar">
+        <button 
+            @click="activeTab = 'dashboard'" 
+            class="px-4 py-3 border-b-2 flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+            :class="activeTab === 'dashboard' ? 'border-cyber-primary text-cyber-primary bg-slate-900/50' : 'border-transparent text-slate-400 hover:text-slate-200'"
+        >
+            <i class="fa-solid fa-chart-line"></i> SAS DASBOR & SIMULATOR
+        </button>
+        <button 
+            @click="activeTab = 'products'" 
+            class="px-4 py-3 border-b-2 flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+            :class="activeTab === 'products' ? 'border-cyber-primary text-cyber-primary bg-slate-900/50' : 'border-transparent text-slate-400 hover:text-slate-200'"
+        >
+            <i class="fa-solid fa-boxes-packing"></i> PRODUK DIGITAL
+        </button>
+        <button 
+            @click="activeTab = 'promo'" 
+            class="px-4 py-3 border-b-2 flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+            :class="activeTab === 'promo' ? 'border-cyber-primary text-cyber-primary bg-slate-900/50' : 'border-transparent text-slate-400 hover:text-slate-200'"
+        >
+            <i class="fa-solid fa-bullhorn animate-bounce"></i> PROMO & KLIEN HUNTER
+        </button>
+        <button 
+            @click="activeTab = 'settings'" 
+            class="px-4 py-3 border-b-2 flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+            :class="activeTab === 'settings' ? 'border-cyber-primary text-cyber-primary bg-slate-900/50' : 'border-transparent text-slate-400 hover:text-slate-200'"
+        >
+            <i class="fa-solid fa-sliders"></i> SETELAN PERSONAL AGEN
+        </button>
+    </div>
+
+    <!-- MAIN BODY SECTION -->
+    <main class="grid grid-cols-1 lg:grid-cols-4 gap-5 items-start">
+        
+        <!-- LEFT COLUMN: DYNAMIC TABS CONTAINER (3/4 Grid space on desktop) -->
+        <div class="lg:col-span-3 flex flex-col gap-5">
+            
+            <!-- TAB 1: DASBOR & SIMULATOR CHAT -->
+            <div v-show="activeTab === 'dashboard'" class="flex flex-col gap-5">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    
+                    <!-- Left sidebar within tab: Customer Simulasi list -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3">
+                        <h3 class="text-xs font-bold font-mono tracking-wider text-slate-400 uppercase">
+                            <i class="fa-solid fa-users"></i> Pelanggan Aktif Sesi
+                        </h3>
+                        <div class="flex flex-col gap-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                            <div 
+                                v-for="cust in simulators" 
+                                :key="cust.name"
+                                @click="selectCustomer(cust.name)"
+                                class="flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-slate-800/80 transition-all font-mono"
+                                :class="activeCustomer === cust.name ? 'bg-slate-850 border-cyber-primary text-cyber-primary' : 'bg-slate-950 border-slate-850 text-slate-300'"
+                            >
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-cyber-primary" :class="cust.active ? 'animate-ping' : ''"></span>
+                                    <div class="flex flex-col text-left">
+                                        <span class="text-xs font-bold">{{ cust.name }}</span>
+                                        <span class="text-[10px] text-slate-550">{{ cust.tags }}</span>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-chevron-right text-xs"></i>
+                            </div>
+                        </div>
+                        
+                        <hr class="border-slate-850 my-1">
+                        
+                        <!-- Manual test launcher -->
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[10px] font-bold font-mono text-slate-400 uppercase">Tambah Customer Baru</label>
+                            <div class="flex gap-1.5">
+                                <input 
+                                    v-model="newCustomerName" 
+                                    type="text" 
+                                    placeholder="Nama Baru" 
+                                    class="bg-slate-950 text-slate-200 border border-slate-800 text-xs px-2.5 py-2.5 rounded-lg focus:outline-none focus:border-cyber-primary font-mono w-full"
+                                    @keyup.enter="addNewCustomer"
+                                >
+                                <button @click="addNewCustomer" class="bg-cyber-primary text-slate-950 px-3.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Center main tab: Main Real-time Chat Simulation Sandbox -->
+                    <div class="md:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 h-[450px]">
+                        <div class="flex justify-between items-center border-b border-slate-850 pb-2">
+                            <div class="flex items-center gap-2.5">
+                                <div class="relative">
+                                    <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-cyber-primary font-bold text-sm">
+                                        {{ activeCustomer ? activeCustomer.charAt(0) : '🔑' }}
+                                    </div>
+                                    <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-cyber-success border-2 border-slate-900"></span>
+                                </div>
+                                <div class="flex flex-col leading-tight text-left">
+                                    <span class="text-xs font-black font-mono tracking-wider">{{ activeCustomer }}</span>
+                                    <span class="text-[10px] text-slate-400 font-mono">Simulasi Autopilot Aktif</span>
+                                </div>
+                            </div>
+                            <!-- Reset History -->
+                            <button @click="clearLogDatabase" class="text-[10px] bg-slate-800 hover:bg-slate-700 hover:text-cyber-danger text-slate-400 px-2.5 py-1.5 rounded border border-slate-750 font-mono cursor-pointer">
+                                <i class="fa-solid fa-trash-can mr-1"></i> Clear DB Logs
+                            </button>
+                        </div>
+
+                        <!-- Messages display -->
+                        <div ref="chatContainer" class="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-3">
+                            <div v-if="chatMessagesWithCustomer.length === 0" class="flex flex-col items-center justify-center h-full text-slate-550 gap-2">
+                                <i class="fa-solid fa-comments text-3xl opacity-30 mt-8"></i>
+                                <span class="text-xs font-mono text-center max-w-[280px]">Belum ada pesan di sesi ini. Kirim trigger pesan di bawah atau luncurkan pitch di Tab Hunter!</span>
+                            </div>
+
+                            <div 
+                                v-for="msg in chatMessagesWithCustomer" 
+                                :key="msg.id"
+                                class="flex flex-col gap-1 max-w-[85%]"
+                                :class="msg.sender === 'CUSTOMER' ? 'self-start text-left' : 'self-end text-right'"
+                            >
+                                <!-- Sender text badge -->
+                                <span class="text-[9px] font-mono uppercase text-slate-500 px-1">
+                                    {{ msg.sender === 'CUSTOMER' ? activeCustomer : msg.sender === 'SYSTEM_AUTODELIVERY' ? '🤖 AUTOPILOT DELIVERY (SYSTEM)' : agentSettings.agentName }}
+                                </span>
+                                
+                                <!-- Content bubble style -->
+                                <div 
+                                    class="p-3 text-xs rounded-xl"
+                                    :class="msg.styleBubble"
+                                >
+                                    <span class="whitespace-pre-wrap">{{ msg.message }}</span>
+                                </div>
+                                <span class="text-[8px] font-mono text-slate-600 px-1">{{ msg.time }}</span>
+                            </div>
+
+                            <!-- Bot generating spinner -->
+                            <div v-if="isGeneratingResponse" class="self-end flex flex-col gap-1 items-end max-w-[80%]">
+                                <span class="text-[9px] font-mono uppercase text-cyber-secondary px-1">{{ agentSettings.agentName }} berpikir...</span>
+                                <div class="bg-slate-800 border border-slate-750 p-3 rounded-xl flex items-center gap-2">
+                                    <svg class="animate-spin h-3.5 w-3.5 text-cyber-primary" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span class="text-xs text-slate-400 font-mono italic">Memformulasikan pitch konversi tinggi...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Send input block -->
+                        <div class="flex gap-2 border-t border-slate-850 pt-3">
+                            <input 
+                                v-model="customerInputMessage" 
+                                type="text" 
+                                placeholder="Ketik pesan pelanggan simulasi di sini... (Contoh: Beli canva pro)" 
+                                class="flex-1 bg-slate-950 text-slate-200 text-xs px-3.5 py-3 rounded-lg border border-slate-850 focus:outline-none focus:border-cyber-primary font-mono"
+                                @keyup.enter="sendCustomerMsg"
+                                :disabled="isGeneratingResponse"
+                            >
+                            <button 
+                                @click="sendCustomerMsg" 
+                                class="bg-cyber-primary text-slate-950 font-bold px-4 py-2.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition duration-200 cursor-pointer"
+                                :disabled="isGeneratingResponse"
+                            >
+                                <span class="hidden sm:inline">KIRIM</span>
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: MANAGE DIGITAL PRODUCTS -->
+            <div v-show="activeTab === 'products'" class="flex flex-col gap-5">
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-6 flex flex-col gap-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-850 pb-3 gap-2">
+                        <div class="text-left">
+                            <h3 class="text-base font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-cyber-primary to-cyber-secondary font-mono">
+                                DATA INVENTORI PRODUK DIGITAL
+                            </h3>
+                            <p class="text-xs text-slate-400">Pastikan stok tersedia agar siklus landing autopilot sukses berjalan.</p>
+                        </div>
+                        <button 
+                            @click="openAddProductModal" 
+                            class="bg-cyber-primary text-slate-950 font-bold text-xs px-4 py-2 rounded-lg font-mono flex items-center gap-1.5 hover:shadow cursor-pointer"
+                        >
+                            <i class="fa-solid fa-circle-plus"></i> BARU
+                        </button>
+                    </div>
+
+                    <!-- Products Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div 
+                            v-for="p in products" 
+                            :key="p.id" 
+                            class="bg-slate-950 border border-slate-850 hover:border-slate-700 p-4 rounded-xl flex flex-col justify-between gap-3 transition-all"
+                        >
+                            <div class="flex flex-col gap-1.5 text-left">
+                                <div class="flex justify-between items-start gap-2">
+                                    <span class="text-[9px] font-mono uppercase bg-slate-850 text-cyber-primary px-2 py-0.5 rounded border border-slate-800">
+                                        {{ p.category }}
+                                    </span>
+                                    <div class="flex items-center gap-1 text-[10px] font-mono text-slate-400">
+                                        <span class="text-cyber-warn"><i class="fa-solid fa-boxes-stacked"></i> Stok: </span>
+                                        <span class="font-bold" :class="p.stock === 0 ? 'text-cyber-danger' : 'text-slate-200'">{{ p.stock }}</span>
+                                        <span class="mx-1">|</span>
+                                        <span class="text-cyber-success"><i class="fa-solid fa-wallet"></i> Terjual: </span>
+                                        <span class="font-bold text-slate-200">{{ p.soldCount }}</span>
+                                    </div>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-100 font-mono tracking-wide">{{ p.name }}</h4>
+                                <p class="text-xs text-slate-400 line-clamp-3 leading-relaxed">{{ p.description }}</p>
+                                
+                                <div class="bg-slate-900 border border-slate-850 p-2 rounded-lg text-[10px] font-mono text-slate-400">
+                                    <div class="font-bold text-cyber-secondary uppercase mb-0.5"><i class="fa-solid fa-paper-plane mr-1"></i> Delivery Lisensi Otomatis:</div>
+                                    <div class="line-clamp-2 italic">{{ p.autoDeliveryContent }}</div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between items-center border-t border-slate-850 pt-2 bg-slate-950">
+                                <span class="text-sm font-black font-mono text-cyber-success">Rp {{ formatNumber(p.price) }}</span>
+                                <div class="flex gap-2">
+                                    <button @click="editProduct(p)" class="text-[10px] bg-slate-900 border border-slate-805 hover:bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg cursor-pointer">
+                                        <i class="fa-regular fa-pen-to-square"></i> Edit
+                                    </button>
+                                    <button @click="deleteProduct(p.id)" class="text-[10px] bg-slate-900 border border-slate-805 hover:bg-cyber-danger/10 text-cyber-danger px-3 py-1.5 rounded-lg cursor-pointer">
+                                        <i class="fa-regular fa-trash-can"></i> Hapus
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: PROMO & CUSTOMER HUNTER -->
+            <div v-show="activeTab === 'promo'" class="flex flex-col gap-5">
+                
+                <!-- Box 1: AI copywriting generator banner -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-6 flex flex-col gap-4">
+                    <div class="flex items-center gap-2 border-b border-slate-850 pb-2.5">
+                        <i class="fa-solid fa-fire text-cyber-primary text-xl"></i>
+                        <h3 class="text-sm md:text-base font-black text-slate-200 font-mono">1. COPYWRITER KAMPANYE PROMO PERSUASIF (AI)</h3>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-3 text-left">
+                            <div class="flex flex-col gap-1">
+                                <label class="text-[10px] font-mono font-bold text-slate-400 uppercase">Pilih Produk Untuk Dipromokan:</label>
+                                <select 
+                                    v-model="copywriterProductId" 
+                                    class="bg-slate-950 border border-slate-850 text-xs px-3 py-2.5 rounded-lg text-slate-300 focus:outline-none focus:border-cyber-primary font-mono w-full"
+                                >
+                                    <option v-for="p in products" :key="p.id" :value="p.id">{{ p.name }} - Rp {{ formatNumber(p.price) }}</option>
+                                </select>
+                            </div>
+
+                            <div class="flex flex-col gap-1">
+                                <label class="text-[10px] font-mono font-bold text-slate-400 uppercase">Pilih Saluran Distribusi Promo:</label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <button 
+                                        v-for="ch in ['WhatsApp', 'Email', 'Instagram']" 
+                                        :key="ch"
+                                        @click="copywriterChannel = ch"
+                                        class="py-2 px-1 text-xs font-mono font-bold border rounded-lg transition-all cursor-pointer"
+                                        :class="copywriterChannel === ch ? 'bg-cyber-secondary/15 border-cyber-secondary text-cyber-secondary' : 'bg-slate-950 border-slate-850 text-slate-400'"
+                                    >
+                                        {{ ch }}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button 
+                                @click="generatePromoScript" 
+                                class="bg-gradient-to-r from-cyber-primary to-cyber-secondary text-slate-950 font-black text-xs py-3 rounded-lg font-mono shadow shadow-cyber-primary/20 hover:scale-[1.01] transition-transform flex items-center justify-center gap-2 cursor-pointer mt-2"
+                                :disabled="isGeneratingPromo"
+                            >
+                                <span v-if="isGeneratingPromo" class="animate-spin h-3.5 w-3.5 text-slate-950 border-2 border-slate-950 border-t-transparent rounded-full"></span>
+                                <i v-else class="fa-solid fa-wand-magic-sparkles"></i>
+                                {{ isGeneratingPromo ? 'Sedang Merancang Kreatif...' : 'BUAT NASKAH COPYWRITING (REAL AI)' }}
+                            </button>
+                        </div>
+
+                        <!-- Right display output copywriting copy/clipboard -->
+                        <div class="bg-slate-950 border border-slate-850 rounded-xl p-4 flex flex-col gap-2.5 relative">
+                            <div class="flex justify-between items-center bg-slate-950 border-b border-slate-850 pb-1.5">
+                                <span class="text-[10px] font-mono text-cyber-secondary font-black uppercase"><i class="fa-regular fa-clipboard"></i> Output Script Copywriting:</span>
+                                <button @click="copyPromoText" class="text-xs text-cyber-primary hover:text-cyan-300 font-mono flex items-center gap-1 cursor-pointer">
+                                    <i class="fa-regular fa-copy"></i> Salin
+                                </button>
+                            </div>
+                            
+                            <textarea 
+                                v-model="generatedPromoText"
+                                placeholder="..."
+                                class="bg-transparent border-0 resize-none font-mono text-[11px] text-slate-300 flex-1 h-[140px] focus:outline-none"
+                                readonly
+                            ></textarea>
+                            <p class="text-[9px] text-slate-500 font-mono text-right italic">Tekan Buat Naskah untuk memicu penjadwalan generator cerdas.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Box 2: DETEKTIF PEMBURU KLIEN POTENSIAL (AI Hunter) -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-6 flex flex-col gap-4">
+                    <div class="flex items-center gap-2 border-b border-slate-850 pb-2.5">
+                        <i class="fa-solid fa-users-viewfinder text-cyber-secondary text-xl"></i>
+                        <h3 class="text-sm md:text-base font-black text-slate-200 font-mono">2. DETEKTIF PEMBURU KLIEN POTENSIAL (PROSPECTOR AI)</h3>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-3 items-end text-left bg-slate-950 border border-slate-850 p-4 rounded-xl">
+                        <div class="flex-1 flex flex-col gap-1.5">
+                            <label class="text-[10px] font-mono font-bold text-slate-400 uppercase">Input Deskripsi Target Pasar / Niche Bisnis Anda:</label>
+                            <input 
+                                v-model="targetNiche" 
+                                type="text"
+                                placeholder="Contoh: Pemilik Kedai Kopi, Mahasiswa IT, Gamers, Ibu Rumah Tangga, Kreator Medsos" 
+                                class="bg-slate-950 border border-slate-850 text-xs px-3 py-3 rounded-lg text-slate-200 focus:outline-none focus:border-cyber-secondary font-mono w-full"
+                            >
+                        </div>
+                        <button 
+                            @click="scanProspectClients" 
+                            class="bg-cyber-secondary text-slate-950 font-black text-xs py-3 px-6 rounded-lg font-mono hover:bg-purple-400 hover:scale-[1.01] transition-all flex items-center gap-2 cursor-pointer w-full md:w-auto justify-center"
+                            :disabled="isSearchingClients"
+                        >
+                            <span v-if="isSearchingClients" class="animate-spin h-3.5 w-3.5 text-slate-100 border-2 border-slate-100 border-t-transparent rounded-full"></span>
+                            <i v-else class="fa-solid fa-user-zoom"></i>
+                            Pindai Calon Pembeli Niche Ini
+                        </button>
+                    </div>
+
+                    <!-- Scan Results target leads list -->
+                    <div v-if="prospectsList.length > 0" class="flex flex-col gap-3">
+                        <h4 class="text-xs font-black font-mono tracking-wider text-cyber-success text-left bg-slate-950 py-1.5 px-3 border border-slate-850 rounded">
+                            PROSPEK TERPANTAU YANG COCOK BERDASARKAN ANALISIS AI:
+                        </h4>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div 
+                                v-for="client in prospectsList" 
+                                :key="client.id"
+                                class="bg-slate-950 border border-slate-850 hover:border-slate-850 rounded-xl p-4 flex flex-col justify-between gap-3 text-left"
+                            >
+                                <div class="flex flex-col gap-2">
+                                    <div class="flex justify-between items-center border-b border-slate-850 pb-1.5">
+                                        <span class="text-xs font-black font-mono text-cyber-primary"><i class="fa-regular fa-user mr-1"></i> {{ client.name }}</span>
+                                        <span class="text-[8px] font-mono bg-cyber-secondary/15 border border-cyber-secondary/30 text-cyber-secondary px-2 py-0.5 rounded uppercase font-bold">{{ client.profession }}</span>
+                                    </div>
+
+                                    <div class="flex flex-col gap-1 text-[11px] font-mono text-slate-400">
+                                        <span class="text-cyber-warn text-[10px] font-black uppercase"><i class="fa-solid fa-circle-exclamation mr-1"></i> Masalah / Latar Belakang:</span>
+                                        <p class="text-slate-300 leading-relaxed">{{ client.background }}</p>
+                                    </div>
+
+                                    <div class="flex flex-col gap-1 text-[11px] font-mono text-slate-400">
+                                        <span class="text-cyber-success text-[10px] font-black uppercase"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Playbook Pendekatan Promosi AI:</span>
+                                        <p class="text-slate-300 italic leading-relaxed">{{ client.pitchStrategy }}</p>
+                                    </div>
+                                </div>
+
+                                <button 
+                                    @click="pitchProspectAndConvert(client)"
+                                    class="bg-cyber-success text-slate-950 font-black text-xs py-2 px-3 rounded-lg font-mono flex items-center justify-center gap-1.5 hover:scale-[1.01] transition-transform shadow shadow-cyber-success/10 cursor-pointer w-full mt-2"
+                                >
+                                    <i class="fa-solid fa-rocket"></i> Kirim Promo & Simulasikan Jual Deal!
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- TAB 4: AGENT SETTINGS -->
+            <div v-show="activeTab === 'settings'" class="flex flex-col gap-5">
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-6 flex flex-col gap-4 text-left">
+                    <h3 class="text-sm md:text-base font-black text-transparent bg-clip-text bg-gradient-to-r from-cyber-primary to-cyber-secondary border-b border-slate-850 pb-2 font-mono uppercase">
+                        <i class="fa-solid fa-gears mr-1"></i> Konfigurasi Kepatuhan Perilaku Agen AI
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[10px] font-mono font-bold text-slate-400 uppercase">Nama Agen AI Anda:</label>
+                            <input 
+                                v-model="agentSettings.agentName" 
+                                type="text"
+                                class="bg-slate-950 border border-slate-850 text-xs px-3.5 py-2.5 rounded-lg text-slate-200 focus:outline-none focus:border-cyber-primary font-mono w-full"
+                            >
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[10px] font-mono font-bold text-slate-400 uppercase">Nada Bicara Persona:</label>
+                            <select 
+                                v-model="agentSettings.tone"
+                                class="bg-slate-950 border border-slate-850 text-xs px-3.5 py-2.5 rounded-lg text-slate-200 focus:outline-none focus:border-cyber-primary font-mono w-full"
+                            >
+                                <option value="Professional">Professional (Bahasanya sopan, lugas, resmi)</option>
+                                <option value="Hustler">Hustler (Penuh semangat bisnis, promotor deal, persuasif)</option>
+                                <option value="Friendly">Friendly (Sapa akrab hangat, humoris bersahabat, banyak emoji)</option>
+                                <option value="Technical">Technical (Analitis detail, fokus spesifikasi sistem & solusi komputer)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[10px] font-mono font-bold text-slate-400 uppercase">Objektif Utama AI Agent:</label>
+                        <input 
+                            v-model="agentSettings.businessObjective" 
+                            type="text"
+                            class="bg-slate-950 border border-slate-850 text-xs px-3.5 py-2.5 rounded-lg text-slate-200 focus:outline-none focus:border-cyber-primary font-mono w-full"
+                        >
+                    </div>
+
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[10px] font-mono font-bold text-slate-400 uppercase">Aturan Kepatuhan & Pedoman Respon Tambahan (Instruksi Sistem):</label>
+                        <textarea 
+                            v-model="agentSettings.customRules"
+                            rows="4"
+                            class="bg-slate-950 border border-slate-850 text-xs px-3.5 py-3 rounded-lg text-slate-300 focus:outline-none focus:border-cyber-primary font-mono w-full resize-none"
+                        ></textarea>
+                    </div>
+
+                    <div class="flex justify-between items-center border-t border-slate-850 pt-4 mt-2">
+                        <span class="text-xs text-slate-450 font-mono italic">Perubahan setelan disimpan langsung di enkripsi memori lokal browser.</span>
+                        <button 
+                            @click="saveSettings" 
+                            class="bg-cyber-primary text-slate-950 font-black font-mono text-xs px-6 py-2.5 rounded-lg shadow hover:scale-[1.01] transition-all cursor-pointer"
+                        >
+                            <i class="fa-solid fa-floppy-disk mr-1"></i> Simpan Setelan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: CORE MONITORING (1/4 Grid Space) -->
+        <!-- Contains Thought Log, Live Terminal Feed, and Success Transactions logs -->
+        <div class="flex flex-col gap-5">
+            
+            <!-- Widget 1: THOUGHT LOG / MONOSPACED CONSOLE TERMINAL (Grows dynamically) -->
+            <div class="bg-black border border-slate-800 rounded-xl p-4 flex flex-col gap-3 font-mono text-[10.5px] text-slate-300 min-h-[350px] cyber-glow">
+                <div class="flex justify-between items-center border-b border-slate-850 pb-2">
+                    <span class="text-cyber-primary font-bold uppercase tracking-wider flex items-center gap-1.5 text-xs">
+                        <span class="w-2 h-2 rounded-full bg-cyber-primary animate-ping"></span>
+                        LAYAR LOG TERMINAL
+                    </span>
+                    <button @click="clearTerminalLogs" class="text-[9px] text-slate-500 hover:text-cyber-danger underline cursor-pointer">
+                        Reset Panel
+                    </button>
+                </div>
+
+                <!-- Live terminal text -->
+                <div ref="terminalContainer" class="flex-1 overflow-y-auto max-h-[350px] custom-scrollbar text-left flex flex-col gap-1.5 font-mono select-text">
+                    <div 
+                        v-for="log in terminalLogs" 
+                        :key="log.id"
+                        class="leading-relaxed whitespace-pre-wrap"
+                        :class="getLogStyle(log.type)"
+                    >
+                        [{{ log.time }}] <b class="uppercase">{{ log.type }}</b>: {{ log.message }}
+                    </div>
+                    
+                    <!-- Simulating monitoring line if empty -->
+                    <div v-show="terminalLogs.length === 0" class="text-slate-600 italic">
+                        Menunggu aktivitas agen autopilot...
+                    </div>
+                </div>
+                
+                <div class="bg-slate-900/40 border border-slate-850 p-2 rounded-lg text-slate-500 flex items-center justify-between text-[9px]">
+                    <span>STATUS: {{ autopilotActive ? 'MONITORING INBOX' : 'STANBY_IDLE' }}</span>
+                    <span>VERSI: 3.5-WEB-PRO</span>
+                </div>
+            </div>
+
+            <!-- Widget 2: HISTORICAL SUCCESS TRANSACTIONS (Revenues tracker) -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3">
+                <h3 class="text-xs font-black font-mono tracking-wider text-slate-400 uppercase text-left">
+                    <i class="fa-solid fa-receipt text-cyber-success mr-1"></i> Riwayat Transaksi Sukses
+                </h3>
+
+                <div class="flex flex-col gap-2 max-h-[220px] overflow-y-auto custom-scrollbar pr-1">
+                    <div v-if="transactions.length === 0" class="text-slate-550 italic font-mono text-[10px] text-center my-6">
+                        Belum ada pembelian sukses.
+                    </div>
+
+                    <!-- Single success ticket -->
+                    <div 
+                        v-for="tx in transactions"
+                        :key="tx.id"
+                        class="bg-slate-950 border border-slate-850 p-2 rounded-lg flex flex-col gap-1 text-left font-mono text-[10px]"
+                    >
+                        <div class="flex justify-between items-center font-bold">
+                            <span class="text-cyber-success">🎉 SUCCESS SALE</span>
+                            <span class="text-slate-300">Rp {{ formatNumber(tx.pricePaid) }}</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400">
+                            <b>Pembeli:</b> {{ tx.customerName }}<br>
+                            <b>Produk:</b> {{ tx.productName }}
+                        </div>
+                        <div class="text-[8px] text-slate-650 text-right">{{ tx.time }}</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- FOOTER WITH LYNK.ID OUTFLOW REDIRECT BANNER -->
+    <footer class="bg-slate-900 border border-slate-855 rounded-xl p-4 text-center text-xs text-slate-450 font-mono flex flex-col md:flex-row justify-between items-center gap-3">
+        <span>© 2026 Nexus AI - Didukung oleh SDK Google Gemini & Integasi Lynk.id Portabel.</span>
+        <div class="flex items-center gap-2" v-if="lynkShopUrl">
+            <span>Toko Lynk.id Utama:</span>
+            <a :href="lynkShopUrl" target="_blank" class="text-cyber-primary hover:underline flex items-center gap-1 font-bold">
+                {{ lynkShopUrl }} <i class="fa-solid fa-up-right-from-square text-[10px]"></i>
+            </a>
+        </div>
+    </footer>
+
+    <!-- ADD/EDIT PRODUCT MODAL (SELF CONTAINED IN COMPONENT) -->
+    <div v-if="showProductModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-5 flex flex-col gap-4 text-left shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-850 pb-2.5">
+                <h3 class="text-sm md:text-base font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-cyber-primary to-cyber-secondary uppercase">
+                    {{ isEditingMode ? 'Edit Produk Digital' : 'Tambah Produk Digital Baru' }}
+                </h3>
+                <button @click="showProductModal = false" class="text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Form Content -->
+            <div class="flex flex-col gap-3 max-h-[420px] overflow-y-auto custom-scrollbar pr-1 text-xs">
+                <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-mono font-bold text-slate-400">Nama Produk Digital:</label>
+                    <input 
+                        v-model="productForm.name" 
+                        type="text" 
+                        placeholder="Misal: Windows 11 Pro Genuine Retail License"
+                        class="bg-slate-950 border border-slate-855 p-2.5 rounded-lg focus:outline-none focus:border-cyber-primary text-slate-2 font-mono"
+                    >
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] font-mono font-bold text-slate-400">Kategori:</label>
+                        <input 
+                            v-model="productForm.category" 
+                            type="text" 
+                            placeholder="E-Book / License Key / Premium"
+                            class="bg-slate-955 border border-slate-855 p-2.5 rounded-lg focus:outline-none focus:border-cyber-primary text-slate-2 font-mono"
+                        >
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] font-mono font-bold text-slate-400">Harga (Rp):</label>
+                        <input 
+                            v-model.number="productForm.price" 
+                            type="number"
+                            placeholder="49000"
+                            class="bg-slate-955 border border-slate-855 p-2.5 rounded-lg focus:outline-none focus:border-cyber-primary text-slate-2 font-mono"
+                        >
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] font-mono font-bold text-slate-400">Jumlah Stok:</label>
+                        <input 
+                            v-model.number="productForm.stock" 
+                            type="number" 
+                            placeholder="30"
+                            class="bg-slate-955 border border-slate-855 p-2.5 rounded-lg focus:outline-none focus:border-cyber-primary text-slate-2 font-mono"
+                        >
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-mono font-bold text-slate-400">Rincian Deskripsi Produk:</label>
+                    <textarea 
+                        v-model="productForm.description" 
+                        rows="3" 
+                        placeholder="Ulas rincian spesifikasi, garansi, model lisensi, atau kelebihan utama produk..."
+                        class="bg-slate-955 border border-slate-855 p-2.5 rounded-lg focus:outline-none focus:border-cyber-primary text-slate-2 font-mono resize-none"
+                    ></textarea>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-mono font-bold text-slate-400 text-cyber-secondary">Isi Pengiriman / Lisensi Otomatis (Setelah Beli):</label>
+                    <textarea 
+                        v-model="productForm.autoDeliveryContent" 
+                        rows="3" 
+                        placeholder="Ketik link unduhan, serial key, kupon premium, maupun detail kredensial login yang otomatis dikirim instan..."
+                        class="bg-slate-955 border border-slate-855 p-2.5 rounded-lg focus:outline-none focus:border-cyber-primary text-slate-2 font-mono resize-none"
+                    ></textarea>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex justify-end gap-2 border-t border-slate-850 pt-3 bg-slate-900">
+                <button 
+                    @click="showProductModal = false" 
+                    class="bg-slate-800 text-slate-350 text-xs px-4 py-2 rounded-lg font-mono hover:bg-slate-755 cursor-pointer"
+                >
+                    Batalkan
+                </button>
+                <button 
+                    @click="saveProduct" 
+                    class="bg-cyber-primary text-slate-900 font-bold text-xs px-5 py-2 rounded-lg font-mono hover:scale-[1.01] transition-transform cursor-pointer"
+                >
+                    Simpan Produk
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- JAVASCRIPT APP LOGIC (VUE 3) -->
+<script>
+    const { createApp, ref, computed, onMounted, nextTick } = Vue;
+
+    createApp({
+        setup() {
+            // --- STATE DECLARATIONS ---
+            const activeTab = ref('dashboard');
+            const showConfig = ref(true);
+            const apiKey = ref(localStorage.getItem('gemini_api_key') || '');
+            const showApiKey = ref(false);
+            const lynkShopUrl = ref(localStorage.getItem('lynk_shop_url') || 'https://lynk.id/cyber_store');
+
+            const autopilotActive = ref(false);
+            let autopilotInterval = null;
+
+            // Stats computations
+            const totalEarnings = ref(0);
+
+            // Settings
+            const agentSettings = ref({
+                agentName: 'NEXUS-V4',
+                tone: 'Hustler',
+                businessObjective: 'Meraih margin setinggi-tingginya dengan otomatisasi deliverables instan dan penawaran tak tertangkis.',
+                customRules: 'Selalu gunakan emoji relevan. Jika menyarankan pembelian, gunakan action code [ACTION:BUY_PRODUCT_ID:X]. Utamakan keramahan digital tingkat tinggi.'
+            });
+
+            // Initial Product seeds (matching repository checkAndSeedData exactly!)
+            const products = ref([
+                {
+                    id: 1,
+                    name: "E-Book: Dropship AI Mastery",
+                    category: "E-Book",
+                    price: 49000,
+                    stock: 50,
+                    soldCount: 0,
+                    description: "Buku panduan lengkap taktik dropship produk luar negeri memanfaatkan kecerdasan buatan untuk otomatisasi riset pasar, pembuatan copywriting, dan optimasi iklan sosial media.",
+                    autoDeliveryContent: "Terimakasih atas pembelian Anda! Hubungi tim bantuan jika ada kendala. Download buku digital Anda di sini: https://bit.ly/dropship-ai-mastery-ebook"
+                },
+                {
+                    id: 2,
+                    name: "Windows 11 Pro Genuine Retail License",
+                    category: "License Key",
+                    price: 75000,
+                    stock: 15,
+                    soldCount: 0,
+                    description: "Lisensi Windows 11 Professional Retail resmi, berlaku seumur hidup (Lifetime) untuk 1 PC. Aktivasi langsung secara online via Server Microsoft resmi.",
+                    autoDeliveryContent: "Key Anda: W269N-WFGWX-YVC9B-4J6C9-T83GX. Cara aktivasi: Buka Settings -> Activation -> Change Product Key -> Klik Next -> Sukses!"
+                },
+                {
+                    id: 3,
+                    name: "Canva Pro Premium 1-Tahun Undangan",
+                    category: "Voucher",
+                    price: 29000,
+                    stock: 30,
+                    soldCount: 0,
+                    description: "Akses penuh ke semua fitur Canva Pro (Template, Font premium, Background remover, Brand kit, dlsb) menggunakan akun pribadi Anda melalui undangan tim berlisensi.",
+                    autoDeliveryContent: "Terimakasih telah membeli! Undangan Tim Canva Pro Anda aktif. Klik undangan tim Anda di sini: https://canva.com/brand/join?invite=CANVA-PRO-1Y-TEAM-AISTUDIO"
+                },
+                {
+                    id: 4,
+                    name: "ChatGPT Plus Premium Sharing Account 30 Hari",
+                    category: "Premium Account",
+                    price: 35000,
+                    stock: 8,
+                    soldCount: 0,
+                    description: "Akun bersama ChatGPT Plus (GPT-4o, GPT-4, DALL-E 3) dengan akses penuh selama 30 hari. Sangat hemat dan cocok untuk pengerjaan tugas, riset, atau copywriter harian.",
+                    autoDeliveryContent: "Kredensial Login ChatGPT Plus Sharing:\nEmail: chatgptsharing12@gmaster.com\nPassword: GPT-4o-Access-Secure!\nCatatan: Dilarang mengubah email/password atau menghapus riwayat chat pengguna lain."
+                }
+            ]);
+
+            // Simulation Customers
+            const simulators = ref([
+                { name: 'Budi Santoso', tags: 'Kreator Online', active: true },
+                { name: 'Riana Siregar', tags: 'Pemilik Kedai Kopi', active: false },
+                { name: 'Farid Gunawan', tags: 'Mahasiswa Akhir IT', active: false },
+                { name: 'Dewi Lestari', tags: 'Warnet Gaming', active: false }
+            ]);
+            const activeCustomer = ref('Budi Santoso');
+            const newCustomerName = ref('');
+
+            // Transactions History
+            const transactions = ref([]);
+
+            // Copied database logs from ROOM equivalents
+            const logDatabase = ref([]);
+
+            const isGeneratingResponse = ref(false);
+            const customerInputMessage = ref('');
+            
+            // Console Terminal Logger logs
+            const terminalLogs = ref([]);
+
+            // Copywriter wizards
+            const copywriterProductId = ref(1);
+            const copywriterChannel = ref('WhatsApp');
+            const isGeneratingPromo = ref(false);
+            const generatedPromoText = ref('');
+
+            // AI Hunter prospects
+            const targetNiche = ref('Mahasiswa & Kreator Medsos');
+            const isSearchingClients = ref(false);
+            const prospectsList = ref([]);
+
+            // Modal Management
+            const showProductModal = ref(false);
+            const isEditingMode = ref(false);
+            const productForm = ref({
+                id: null,
+                name: '',
+                category: '',
+                price: 0,
+                stock: 0,
+                description: '',
+                autoDeliveryContent: ''
+            });
+
+            // Dialog references for scrolling
+            const chatContainer = ref(null);
+            const terminalContainer = ref(null);
+
+            // --- COMPUTED PROPERTIES ---
+            const chatMessagesWithCustomer = computed(() => {
+                return logDatabase.value
+                    .filter(log => log.customerName === activeCustomer.value)
+                    .map(msg => {
+                        let bubbleStyle = 'bg-slate-800 text-slate-100 border border-slate-750';
+                        if (msg.sender === 'CUSTOMER') {
+                            bubbleStyle = 'bg-slate-950 border border-cyber-primary/30 text-slate-200';
+                        } else if (msg.sender === 'SYSTEM_AUTODELIVERY') {
+                            bubbleStyle = 'bg-cyber-success/10 border border-cyber-success/30 text-cyber-success font-mono font-bold';
+                        } else {
+                            bubbleStyle = 'bg-gradient-to-r from-slate-850 to-slate-900 border border-cyber-secondary/35 text-slate-100';
+                        }
+                        return { 
+                            ...msg,
+                            styleBubble: bubbleStyle 
+                        };
+                    });
+            });
+
+
+            // --- HELPER LOG METHODS ---
+            const pushLog = (type, message) => {
+                const now = new Date();
+                const timeStr = now.toTimeString().split(' ')[0];
+                terminalLogs.value.push({
+                    id: Date.now() + Math.random().toString(),
+                    time: timeStr,
+                    type: type, // 'ai_agent', 'system', 'gemini_api', 'error', 'transaction'
+                    message: message
+                });
+                
+                // Keep terminal scrolled down
+                nextTick(() => {
+                    if (terminalContainer.value) {
+                        terminalContainer.value.scrollTop = terminalContainer.value.scrollHeight;
+                    }
+                });
+            };
+
+            const getLogStyle = (type) => {
+                switch(type) {
+                    case 'gemini_api': return 'text-cyber-secondary';
+                    case 'error': return 'text-cyber-danger font-bold';
+                    case 'transaction': return 'text-cyber-success font-black';
+                    case 'system': return 'text-cyber-primary';
+                    default: return 'text-slate-350';
+                }
+            };
+
+
+            // --- CREDENTIALS PERSIST ---
+            const saveCredentials = () => {
+                localStorage.setItem('gemini_api_key', apiKey.value);
+                localStorage.setItem('lynk_shop_url', lynkShopUrl.value);
+                pushLog('system', `Kredensial integrasi berhasil diperbarui dalam cache penjelajah.`);
+            };
+
+            const saveSettings = () => {
+                localStorage.setItem('nexus_agent_settings', JSON.stringify(agentSettings.value));
+                pushLog('system', `Konfigurasi asisten AI [${agentSettings.value.agentName}] berhasil dikunci.`);
+                alert('Setelan preferensi bot AI berhasil disimpan!');
+            };
+
+
+            // --- SIMULATOR CONTROL ---
+            const selectCustomer = (name) => {
+                activeCustomer.value = name;
+                simulators.value.forEach(s => s.active = s.name === name);
+                pushLog('system', `Pindah fokus cockpit dashboard ke pelanggan: ${name}.`);
+                scrollToBottom();
+            };
+
+            const addNewCustomer = () => {
+                if (!newCustomerName.value.trim()) return;
+                const newName = newCustomerName.value.trim();
+                simulators.value.push({
+                    name: newName,
+                    tags: 'Manual Simulator',
+                    active: false
+                });
+                selectCustomer(newName);
+                newCustomerName.value = '';
+            };
+
+
+            // --- CORE CHAT CONTEXT GENERATOR (CALLING GEMINI API OR FALLBACK) ---
+            const sendCustomerMsg = async () => {
+                if (!customerInputMessage.value.trim() || isGeneratingResponse.value) return;
+                
+                const userMsg = customerInputMessage.value.trim();
+                customerInputMessage.value = '';
+                const activeCust = activeCustomer.value;
+
+                // Log customer text
+                const now = new Date();
+                const nowStr = now.toTimeString().split(' ')[0];
+                logDatabase.value.push({
+                    id: Date.now() + Math.random().toString(),
+                    customerName: activeCust,
+                    sender: 'CUSTOMER',
+                    message: userMsg,
+                    time: nowStr
+                });
+
+                scrollToBottom();
+                isGeneratingResponse.value = true;
+                pushLog('system', `Menerima pesan dari ${activeCust}: "${userMsg}"`);
+
+                try {
+                    // Assemble conversation logs context
+                    const targetConvoLogs = logDatabase.value.filter(log => log.customerName === activeCust);
+                    // Map logs to clean role/text strings
+                    const historyText = targetConvoLogs.map(l => {
+                        return `${l.sender === 'CUSTOMER' ? 'Customer' : 'Saya (' + agentSettings.value.agentName + ')'}: ${l.message}`;
+                    }).join('\n');
+
+                    const productDetails = products.value.map(p => {
+                        return `- ID: ${p.id} | Nama: ${p.name} | Kategori: ${p.category} | Harga: Rp ${p.price} | Stok: ${p.stock} | Deskripsi: ${p.description}`;
+                    }).join('\n');
+
+                    // Prompt construction
+                    const systemInstructionText = `
+Anda adalah Chatbot Agen Asisten Bisnis kecerdasan buatan bernama ${agentSettings.value.agentName}.
+Tugas Anda adalah melayani pelanggan secara cerdas, persuasif, dan mandiri untuk bisnis produk digital otomatis milik owner Anda.
+
+Aturan Tambahan:
+- Nada bicara Anda harus: ${agentSettings.value.tone}.
+- Aturan bisnis khusus yang wajib dipatuhi: ${agentSettings.value.customRules}.
+- Objektif bisnis Anda: ${agentSettings.value.businessObjective}.
+- Link toko checkout utama: ${lynkShopUrl.value}.
+
+Berikut adalah DAFTAR INVENTORI aktif kami saat ini:
+${productDetails}
+
+ATURAN DEALS SANGAT PENTING:
+Jika pelanggan mengonfirmasi ketertarikan kuat/konfirmasi ingin membeli produk (Contoh: "Beli Windows 11", "Oke saya bayar ebook dropship", "Pesen canva pro dong", "Mau beli chatgpt sharing") DAN produk tersebut stoknya > 0:
+- DI AKHIR RESPONSE Anda, Anda WAJIB menambahkan format persis berikut ini tanpa modifikasi spasi: \`[ACTION:BUY_PRODUCT_ID:X]\` di mana X adalah ID numerik produk tersebut.
+- Contoh: "Baik kak, pesanan segera kami proses ya. Mohon tunggu sebentar... [ACTION:BUY_PRODUCT_ID:1]"
+- Jika produk tersebut STOK-nya 0, sampaikan rincian maaf bahwa barang sedang kosong, jangan tambahkan kode aksi tersebut.
+- Jawab rincian dalam Bahasa Indonesia yang alami sesuai nada yang diinginkan.
+`;
+
+                    const finalPrompt = `
+Konteks Chat Sejauh Ini:
+${historyText}
+
+Pesan Terakhir Pelanggan:
+Customer: ${userMsg}
+
+Tanggapi pesan di atas sesuai systemInstruction. Tulis respon sekarang:
+`;
+
+                    let responseText = "";
+                    let thoughts = "";
+
+                    // Check if real API Key is configured
+                    const isKeyConfigured = apiKey.value && apiKey.value.trim() && !apiKey.value.includes('PLACEHOLDER') && apiKey.value.length > 10;
+
+                    if (isKeyConfigured) {
+                        pushLog('gemini_api', `Mengirim query ke REST Endpoint Google Gemini-1.5-Flash...`);
+                        
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.value.trim()}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [ { parts: [ { text: finalPrompt } ] } ],
+                                generationConfig: {
+                                    temperature: 0.6
+                                }
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`REST Error: Status ${response.status}`);
+                        }
+
+                        const data = await response.json();
+                        responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                        
+                        thoughts = `Kapasitas Respons Sukses.\nAsisten: ${agentSettings.value.agentName}\nModel: gemini-1.5-flash API Call\nParsing: Selesai.`;
+                        pushLog('gemini_api', `Berhasil memformulasikan respons AI yang akurat.`);
+                    } else {
+                        // Fallback Simulated local agent engine
+                        pushLog('system', `Kunci API kosong. Mengaktifkan mesin simulasi lokal autopilot yang responsif.`);
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        
+                        const resPair = getLocalSimulatedReply(userMsg);
+                        responseText = resPair.text;
+                        thoughts = resPair.thoughts;
+                        pushLog('system', `Mensimulasikan analisis log berpikir cerdas.`);
+                    }
+
+                    // Log response in terminal
+                    pushLog('ai_agent', `Pikiran AI: \n"${thoughts}"`);
+
+                    // Process transactional deals
+                    processRepliedTransaction(responseText, thoughts, activeCust);
+
+                } catch (err) {
+                    pushLog('error', `Error runtime generator: ${err.message}`);
+                    logDatabase.value.push({
+                        id: Date.now() + Math.random().toString(),
+                        customerName: activeCust,
+                        sender: 'AGENT',
+                        message: "Aduh kak, jaringan asisten sepertinya terganggu sebentar. Bisa tolong ulangi lagi permintaannya? 😊",
+                        time: nowStr
+                    });
+                } finally {
+                    isGeneratingResponse.value = false;
+                    scrollToBottom();
+                }
+            };
+
+            // Process response string, extract [ACTION:BUY_PRODUCT_ID:X]
+            const processRepliedTransaction = (responseText, thoughts, activeCust) => {
+                const now = new Date();
+                const nowStr = now.toTimeString().split(' ')[0];
+
+                const buyActionRegex = /\[ACTION:BUY_PRODUCT_ID:(\d+)\]/;
+                const match = responseText.match(buyActionRegex);
+
+                let cleanResponse = responseText;
+                let targetId = null;
+
+                if (match) {
+                    targetId = parseInt(match[1]);
+                    cleanResponse = responseText.replace(buyActionRegex, '').trim();
+                }
+
+                // Append Agent Speech to DB
+                logDatabase.value.push({
+                    id: Date.now() + Math.random().toString(),
+                    customerName: activeCust,
+                    sender: 'AGENT',
+                    message: cleanResponse,
+                    time: nowStr
+                });
+
+                if (targetId) {
+                    const product = products.value.find(p => p.id === targetId);
+                    if (product) {
+                        if (product.stock > 0) {
+                            // Deduct stocks
+                            product.stock -= 1;
+                            product.soldCount += 1;
+
+                            // Update stats
+                            totalEarnings.value += product.price;
+
+                            // Save successful transaction log
+                            transactions.value.unshift({
+                                id: Date.now().toString(),
+                                customerName: activeCust,
+                                productName: product.name,
+                                pricePaid: product.price,
+                                time: now.toLocaleDateString('id-ID') + ' ' + nowStr
+                            });
+
+                            // Autodelivery trigger
+                            logDatabase.value.push({
+                                id: Date.now() + Math.random().toString(),
+                                customerName: activeCust,
+                                sender: 'SYSTEM_AUTODELIVERY',
+                                message: `🚀 AUTOPILOT DELIVERY:\nProduk digital '${product.name}' sukses dikirim ke pelanggan instan!\n\n📋 ISI PRODUK:\n${product.autoDeliveryContent}`,
+                                time: nowStr
+                            });
+
+                            pushLog('transaction', `DEALS BERHASIL! [${product.name}] senilai Rp ${formatNumber(product.price)} terjual ke ${activeCust}!`);
+                            pushLog('system', `Autopilot menyiarkan lisensi digital secara instan ke pembeli.`);
+                        } else {
+                            // Out of stock fallback
+                            logDatabase.value.push({
+                                id: Date.now() + Math.random().toString(),
+                                customerName: activeCust,
+                                sender: 'AGENT',
+                                message: `Aduh kak, mohon maaf sekali, kelihatannya stok untuk '${product.name}' mendadak kosong. Transaksi otomatis kami tangguhkan.`,
+                                time: nowStr
+                            });
+                            pushLog('error', `Transaksi gagal: Stok produk '${product.name}' kosong.`);
+                        }
+                    }
+                }
+            };
+
+
+            // --- LOCAL OFFLINE SIMULATOR DIALOGS ---
+            const getLocalSimulatedReply = (message) => {
+                const msgLower = message.toLowerCase();
+                let text = "";
+                let thoughts = "";
+
+                // Greetings
+                const greeting = whenGreeting(agentSettings.value.tone, agentSettings.value.agentName);
+
+                // Check matches in product list
+                const matchedProduct = products.value.find(p => {
+                    const nameLower = p.name.toLowerCase();
+                    const catLower = p.category.toLowerCase();
+                    return msgLower.includes(p.name.split(' ')[0].toLowerCase()) || 
+                           msgLower.includes(catLower) || 
+                           (msgLower.includes("beli") && msgLower.includes(p.name.split(':')[0].toLowerCase()));
+                });
+
+                if (msgLower.includes('halo') || msgLower.includes('p') || msgLower.includes('siang') || msgLower.includes('pagi') || msgLower.includes('malam') || msgLower.includes('test')) {
+                    text = `${greeting}\n\nKami adalah agen toko digital otomatis berlisensi resmi. Kami melayani pengiriman super cepat kunci lisensi OS, voucher premium, ChatGPT, dan Buku Dropship termurah!\n\nAda yang bisa kami bantu hari ini?`;
+                    thoughts = `Analisis NLP: Greeting terdeteksi.\nTone: ${agentSettings.value.tone}.\nMenjawab dengan sapaan akrab berlisensi hangat.`;
+                } else if (msgLower.includes('harga') || msgLower.includes('list') || msgLower.includes('stok') || msgLower.includes('produk') || msgLower.includes('daftar')) {
+                    const items = products.value.map(p => `- *${p.name}* (Rp ${formatNumber(p.price)}) - [Stok: ${p.stock}]`).join('\n');
+                    text = `Tentu kak! Berikut daftar katalog digital aktif di sistem kami saat ini:\n\n${items}\n\nKetik langsung nama produk yang diminati atau ketik 'Beli <nama produk>' untuk checkout autopilot secepat kilat!`;
+                    thoughts = `Analisis NLP: Query katalog harga.\nKonstruksi balasan list markup data inventory lengkap.`;
+                } else if (matchedProduct) {
+                    if (msgLower.includes('beli') || msgLower.includes('pesan') || msgLower.includes('order') || msgLower.includes('mau') || msgLower.includes('transaksi')) {
+                        text = `Siap kak! Pesanan untuk produk berkualitas tinggi **${matchedProduct.name}** seharga **Rp ${formatNumber(matchedProduct.price)}** segera diproses.\n\nSistem autopilot kami akan menerbitkan serial key/delivery tautan unduhan tepat setelah ini, mohon ditunggu sebentar ya kakk... [ACTION:BUY_PRODUCT_ID:${matchedProduct.id}]`;
+                        thoughts = `NLP: INTENT BELI TERDITEKSI UNTUK ID ${matchedProduct.id}.\nMempercepat parsing dan menyertakan kode webhook transaksi.`;
+                    } else {
+                        text = `Wah, produk **${matchedProduct.name}** pilihan yang keren sekali Kak!\n\nDeskripsi: ${matchedProduct.description}\n\nHarganya sangat ekonomis hanya **Rp ${formatNumber(matchedProduct.price)}**. Stok tersisa ${matchedProduct.stock} unit saat ini.\n\nMau pesan produk ini sekarang biar langsung dikirim instan?`;
+                        thoughts = `NLP: Pertanyaan rincian produk ${matchedProduct.name}.\nMenyajikan benefit utama guna memicu konversi pembelian.`;
+                    }
+                } else {
+                    text = `Terimakasih atas pertanyaannya Kak! Saya selaku asisten AI **${agentSettings.value.agentName}** berkomitmen memandu transaksi Anda dengan mudah.\n\nUntuk memesan, silakan tulis nama produk digital yang kakak butuhkan (seperti Dropship AI, Windows 11, Canva, atau ChatGPT Plus).\n\nAtau kunjungi catalog toko Lynk.id kami di: ${lynkShopUrl.value}`;
+                    thoughts = `NLP: Pesan umum/unmatched.\nFallback menawarkan rincian tautan Lynk.id toko eksternal.`;
+                }
+
+                return { text, thoughts };
+            };
+
+            const whenGreeting = (tone, name) => {
+                switch(tone) {
+                    case 'Professional': return `Selamat datang di Layanan Digital Otomatis. Saya ${name}, asisten profesional Anda dalam pengadaan sistem digital penunjang bisnis harian.`;
+                    case 'Hustler': return `Yo bos! Jumpa lagi dengan ${name} di sini! Siap bantu kembangkan omset bisnismu 10x lipat pakai amunisi digital terbaik!`;
+                    case 'Technical': return `Security Sandbox Operational: Node '${name}' aktif. Inisiasi protokol kueri help-desk fungsional. Silakan masukkan parameter produk yang divalidasi.`;
+                    default: return `Halo Kak! Salam kenal hangat dari ${name}! Ada produk digital keren yang bisa asisten bantu jelaskan atau pesan otomatis hari ini? 😊`;
+                }
+            };
+
+
+            // --- TAB 3: PROMO ACTIONS ---
+            const generatePromoScript = async () => {
+                const prod = products.value.find(p => p.id === copywriterProductId.value);
+                if (!prod) return;
+
+                isGeneratingPromo.value = true;
+                pushLog('system', `Memulai penyusunan strategi pemasaran untuk [${prod.name}]...`);
+
+                const isKeyConfigured = apiKey.value && apiKey.value.trim() && !apiKey.value.includes('PLACEHOLDER');
+
+                try {
+                    if (isKeyConfigured) {
+                        const prompt = `
+Anda adalah seorang praktisi marketing digital pakar copywriting konversi tinggi di Indonesia.
+Tugas Anda adalah menulis naskah/copy promosi persuasif berbahasa Indonesia untuk produk digital '${prod.name}' yang memiliki rincian deskripsi: '${prod.description}'.
+Buat naskah promosi eksklusif yang sangat disesuaikan dengan saluran promosi: '${copywriterChannel.value}'.
+Format promo harus siap pakai, rapi, menarik, menggunakan emoji yang relevan, memiliki hook pencuri perhatian di awal, rincian benefit utama, call-to-action yang kuat mengarah ke link toko '${lynkShopUrl.value}', dan batas waktu kelangkaan (scarcity).
+`;
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.value.trim()}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [ { parts: [ { text: prompt } ] } ]
+                            })
+                        });
+
+                        if (!response.ok) throw new Error(`Status ${response.status}`);
+                        const data = await response.json();
+                        generatedPromoText.value = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                    } else {
+                        // Fallback Simulated Copy
+                        await new Promise(resolve => setTimeout(resolve, 800));
+                        generatedPromoText.value = getSimulatedCopyText(prod.name, prod.description, copywriterChannel.value);
+                    }
+
+                    pushLog('system', `Saluran promosi ${copywriterChannel.value} terisi dengan copywriting premium baru.`);
+                } catch(err) {
+                    pushLog('error', `Gagal merancang copywriting AI: ${err.message}`);
+                    generatedPromoText.value = `Gagal merancang naskah promosi: ${err.message}`;
+                } finally {
+                    isGeneratingPromo.value = false;
+                }
+            };
+
+            const getSimulatedCopyText = (name, desc, channel) => {
+                const hook = channel === 'WhatsApp' ? '📢 *PENAWARAN SPESIAL TERBATAS!* 📢\n\nHalo Kak! Ada kabar gembira buat kamu yang ingin meningkatkan efisiensi harian.' 
+                           : channel === 'Email' ? `Subject: Optimalkan efisiensi Anda sekarang dengan ${name}! 🚀\n\nYth. Rekan Bisnis,\n\nApakah Anda sering mengalami kendala teknis harian?`
+                           : '✨ *RESTOCK SPESIAL: AMBIL SEKARANG!* ✨\n\nBosan dengan batasan tools gratisan yang bikin pusing? Sini kumpul! 👇';
+                
+                return `
+${hook}
+
+Memperkenalkan solusi digital instan teruji: **"${name}"**!
+
+💡 *Kenapa Harus Membeli Produk Ini?*
+- ${desc}
+- Garansi aktivasi 100% legal dan bersertifikat seumur hidup.
+- Pengiriman instan otomatis oleh AI asisten bot kami tanpa antri manual.
+
+🎁 *Promo Pembelian Instan Hari Ini:*
+Pesan lewat asisten cerdas autopilot di dasbor cockpit kami, atau pesan langsung lewat store e-commerce resmi kami di:
+👉 ${lynkShopUrl.value}
+
+⚡ _Penawaran diskon 30% ini sangat terbatas dan hanya berlaku khusus hari ini!_
+`.trim();
+            };
+
+            const copyPromoText = () => {
+                if (!generatedPromoText.value) return;
+                navigator.clipboard.writeText(generatedPromoText.value);
+                alert('Naskah iklan promosi berhasil disalin ke clipboard Anda!');
+            };
+
+
+            // --- PROSPECT HUNTER CLIENTS GENERATOR ---
+            const scanProspectClients = async () => {
+                isSearchingClients.value = true;
+                pushLog('system', `Menjelajahi audiens target potensial di Indonesia untuk niche: [${targetNiche.value}]...`);
+                
+                const isKeyConfigured = apiKey.value && apiKey.value.trim() && !apiKey.value.includes('PLACEHOLDER');
+
+                try {
+                    if (isKeyConfigured) {
+                        const systemPrompt = `
+Anda adalah Agen Riset Pasar Bisnis berpengalaman di Indonesia.
+Tugas Anda adalah memetakan dan merancang 5 profil Calon Klien/Pembeli Potensial di Indonesia untuk target niche: '${targetNiche.value}'.
+
+Anda WAJIB memberikan jawaban berupa teks terstruktur rapi dengan format baris baru di awali "##" sebagai pemisah antar prospek, dan pembatas kolom menggunakan karakter "||".
+Setiap prospek harus mengikuti pola kolom persis:
+NAMA||PROFESI/NICHE||KETERTARIKAN UTAMA||MASALAH/LATAR BELAKANG||PLAYBOOK PENDEKATAN PROMO
+
+Contoh Output:
+##Riana Siregar||Pemilik Kedai Kopi||Canva Pro Subscription||Butuh desain menu, banner, dan reels instagram mingguan tapi hemat biaya desainer||Tawarkan canva premium bundle garansi ganti baru + template menu kopi siap saji.
+##Farid Gunawan||Mahasiswa Akhir IF||Windows 11 License Key||Butuh OS original stabil bebas virus/malware untuk skripsi kodingan||Gencarkan garansi luntur, aktivasi legal Microsoft tanpa crack berbahaya.
+
+Pastikan Anda menghasilkan tepat 5 prospek. Jangan tampilkan teks pengantar, penutup, markdown bold, atau tanda kutip di luar format separator. Mulai respons langsung dengan ##.
+`;
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.value.trim()}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [ { parts: [ { text: "Hasilkan 5 profil calon pembeli potensial sekarang." } ] } ],
+                                systemInstruction: { parts: [ { text: systemPrompt } ] },
+                                generationConfig: { temperature: 0.7 }
+                            })
+                        });
+
+                        if (!response.ok) throw new Error(`Status ${response.status}`);
+                        const data = await response.json();
+                        const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                        
+                        // Parse leads
+                        const clients = [];
+                        const rawLines = responseText.split("##");
+                        for (let line of rawLines) {
+                            const trimmed = line.trim();
+                            if (!trimmed) continue;
+                            const parts = trimmed.split("||");
+                            if (parts.length >= 5) {
+                                clients.push({
+                                    id: Date.now() + Math.random().toString(),
+                                    name: parts[0].trim(),
+                                    profession: parts[1].trim(),
+                                    interest: parts[2].trim(),
+                                    background: parts[3].trim(),
+                                    pitchStrategy: parts[4].trim()
+                                });
+                            }
+                        }
+
+                        prospectsList.value = clients.length > 0 ? clients : getSimulatedProspects(targetNiche.value);
+                    } else {
+                        // Fallback Simulated Leads
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        prospectsList.value = getSimulatedProspects(targetNiche.value);
+                    }
+
+                    pushLog('system', `Pemindaian selesai. Berhasil mendeteksi 5 prospek tertarget dengan ROI prospek tinggi.`);
+                } catch(err) {
+                    pushLog('error', `Gagal memindai klien potensial: ${err.message}`);
+                    prospectsList.value = getSimulatedProspects(targetNiche.value);
+                } finally {
+                    isSearchingClients.value = false;
+                }
+            };
+
+            const getSimulatedProspects = (niche) => {
+                const searchNiche = niche.toLowerCase();
+                if (searchNiche.includes('kopi') || searchNiche.includes('cafe') || searchNiche.includes('kuliner') || searchNiche.includes('makanan')) {
+                    return [
+                        { id: 1, name: 'Adi Wijaya', profession: 'Owner Coffee Shop', interest: 'Canva Pro Subscription', background: 'Sering kesulitan mendesain menu promo mingguan kreatif dan feeds Instagram karena budget designer mahal.', pitchStrategy: 'Tawarkan Canva premium + bonus 120 template promo kopi kekinian.' },
+                        { id: 2, name: 'Siti Rahma', profession: 'Admin Katering Rumah', interest: 'ChatGPT Plus Premium', background: 'Kerap terkena writer\'s block saat menulis copywriting menu harian untuk siaran WA grup.', pitchStrategy: 'Fokus pada kecepatan AI menulis naskah penawaran menu katering lezat dalam 10 detik.' },
+                        { id: 3, name: 'Andi Pratama', profession: 'Pemilik Toko Kue', interest: 'Canva Pro Promo', background: 'Perlu membuat brosur cetak untuk pembukaan cabang baru porsi hemat.', pitchStrategy: 'Tekankan fitur premium drag-and-drop lisensi bebas klaim komersil.' },
+                        { id: 4, name: 'Hesti Cantika', profession: 'Food Influencer', interest: 'ChatGPT Plus', background: 'Memerlukan riset ide konten video review kuliner viral yang padat.', pitchStrategy: 'Kasih demo prompt membuat outline script short video engagement tinggi.' },
+                        { id: 5, name: 'Gede Satria', profession: 'Admin Supplier Kopi', interest: 'Windows 11 License', background: 'Sering mendapati laptop inventori kantor crash akibat lisensi bajakan yang terinfeksi ransomware.', pitchStrategy: 'Sebutkan kedamaian pikiran dengan lisensi Microsoft original bergaransi.' }
+                    ];
+                } else if (searchNiche.includes('mahasiswa') || searchNiche.includes('it') || searchNiche.includes('kuliah') || searchNiche.includes('siswa')) {
+                    return [
+                        { id: 11, name: 'Farid Gunawan', profession: 'Mahasiswa Teknik IF', interest: 'Windows 11 Pro Retail', background: 'Sedang menulis skripsi kodingan kompleks, butuh OS stabil minim bug dan aman dari malware.', pitchStrategy: 'Tekankan lisensi retail resmi aktivasi direct server Microsoft.' },
+                        { id: 12, name: 'Mega Silviani', profession: 'Mahasiswa DKV', interest: 'Canva Pro Premium', background: 'Tugas kuliah visual menumpuk tajam, butuh asset premium, remove background instan tanpa limit.', pitchStrategy: 'Tawarkan bundle Canva premium seharga es kopi susu murah.' },
+                        { id: 13, name: 'Ronaldi Halim', profession: 'Freelance Copywriter', interest: 'ChatGPT Plus Sharing', background: 'Kejar deadline 10 artikel SEO sehari, sering kena rate limit pada model ChatGPT gratisan.', pitchStrategy: 'Kedepankan akses GPT-4o berkecepatan tinggi bebas delay antrean.' },
+                        { id: 14, name: 'Dewi Lestari', profession: 'Mahasiswa Akuntansi', interest: 'E-Book Dropship Mastery', background: 'Ingin memulai bisnis sampingan digital yang praktis tanpa modal sewa ruko fisik.', pitchStrategy: 'Soroti modal materi e-book langsung praktek gratis mentoring di grup.' },
+                        { id: 15, name: 'Beni Saputra', profession: 'Asisten Laboratorium', interest: 'Windows License Team', background: 'Perlu mengaktivasi 5 PC lab komputer kampus yang baru selesai dirakit.', pitchStrategy: 'Kasih harga diskon kuantitas khusus paket akademisi original.' }
+                    ];
+                } else {
+                    // Default Fallback
+                    return [
+                        { id: 21, name: 'Robby Kurniawan', profession: 'Pegawai Swasta', interest: 'E-Book: Dropship AI Mastery', background: 'Mencari tambahan nafkah selepas pulang kantor namun minim modal awal.', pitchStrategy: 'Tunjukkan kesederhanaan formula dropship digital profit 100% dari rumah.' },
+                        { id: 22, name: 'Ahmad Faisal', profession: 'Game Center Owner', interest: 'Windows 11 Pro Key', background: 'Khawatir terkena razia software tidak resmi karena komputernya diisi windows gratisan bypass.', pitchStrategy: 'Fokus pada legalitas key retail permanen anti-blacklist Microsoft.' },
+                        { id: 23, name: 'Kartika Sari', profession: 'Kreator Online', interest: 'Canva Pro Undangan', background: 'Mengejar estetika feed media sosial demi menarik sponsor endorsement berbayar.', pitchStrategy: 'Tawarkan Canva premium instan bonus template set influencer.' },
+                        { id: 24, name: 'Lutfi Hermansyah', profession: 'Indie Web Developer', interest: 'ChatGPT Plus Premium', background: 'Butuh debugging error script kodingan PHP/React-nya secara instan tanpa bertanya di forum.', pitchStrategy: 'Tekankan kehebatan data analysis model AI asisten.' },
+                        { id: 25, name: 'Vina Amelia', profession: 'Ibu Rumah Tangga', interest: 'E-Book Dropship Bisnis', background: 'Ingin mandiri finansial secara fleksibel sambil mengurus balita dari rumah.', pitchStrategy: 'Jelaskan materi e-book yang ramah ibu rumah tangga dari nol.' }
+                    ];
+                }
+            };
+
+            // Initiate automatic simulated pitch and convert client to purchase!
+            const pitchProspectAndConvert = (client) => {
+                // Determine matched product from prospect's interest field
+                const lowerInterest = client.interest.toLowerCase();
+                let matchedProduct = products.value[0]; // fallback
+                if (lowerInterest.includes('windows') || lowerInterest.includes('license')) matchedProduct = products.value[1];
+                else if (lowerInterest.includes('canva') || lowerInterest.includes('voucher')) matchedProduct = products.value[2];
+                else if (lowerInterest.includes('chatgpt') || lowerInterest.includes('premium')) matchedProduct = products.value[3];
+
+                // Redirect tab
+                activeTab.value = 'dashboard';
+                selectCustomer(client.name);
+
+                pushLog('system', `[AI PITCH CAMPAIGN] Menayangkan iklan marketing persuasif personal untuk ${client.name}...`);
+                
+                isGeneratingResponse.value = true;
+                
+                // Construct personalized pitch
+                const promoCopy = `Halo Kak ${client.name}! Kami mengamati sebagai ${client.profession} kakak mungkin sedang butuh solusi praktis untuk kendala: ${client.background}.\n\nKami merekomendasikan penawaran khusus teruji: *${matchedProduct.name}*!\n\n${client.pitchStrategy}\n\nKetik 'Beli ${matchedProduct.name}' sekarang jika kakak berminat ya, mumpung stock masih tersedia!`;
+
+                setTimeout(() => {
+                    const now = new Date();
+                    const nowStr = now.toTimeString().split(' ')[0];
+
+                    // 1. Log Agent's Pitch
+                    logDatabase.value.push({
+                        id: Date.now().toString(),
+                        customerName: client.name,
+                        sender: 'AGENT',
+                        message: promoCopy,
+                        time: nowStr
+                    });
+                    
+                    pushLog('ai_agent', `Copywriting personal terkirim ke inbox ${client.name}.`);
+
+                    // 2. Schedule Customer enthusiastically replies and converts in 2s
+                    setTimeout(() => {
+                        const custReply = `Halo kak, terima kasih penawarannya! Kebetulan sekali saya sebagai ${client.profession} memang sedang pusing memikirkan masalah: ${client.background}.\n\nSolusi dari '${matchedProduct.name}' ini cocok banget dengan kebutuhan mendesak saya! Saya mau langsung order dan beli 1 unit sekarang juga ya kak.`;
+                        
+                        logDatabase.value.push({
+                            id: (Date.now() + 1).toString(),
+                            customerName: client.name,
+                            sender: 'CUSTOMER',
+                            message: custReply,
+                            time: nowStr
+                        });
+                        
+                        pushLog('system', `${client.name} menunjukkan konversi pembelian positif 100%!`);
+
+                        // 3. Trigger Transaction auto closing deal loop
+                        setTimeout(() => {
+                            const botConfirm = `Baik kak ${client.name}, luar biasa sekali! Pesanan pesat Kakak untuk ${matchedProduct.name} segera kami proses ya. Mohon tunggu 1 detik saja kunci lisensi/akses digital Anda akan diterbitkan otomatis. [ACTION:BUY_PRODUCT_ID:${matchedProduct.id}]`;
+                            
+                            processRepliedTransaction(botConfirm, "Campaign Pitch Deal Closed Success", client.name);
+                            isGeneratingResponse.value = false;
+                        }, 1200);
+
+                    }, 2000);
+
+                }, 1000);
+            };
+
+
+            // --- PRODUCT INVENTORI CRUD METHODS ---
+            const openAddProductModal = () => {
+                isEditingMode.value = false;
+                productForm.value = {
+                    id: null,
+                    name: '',
+                    category: 'License Key',
+                    price: 49000,
+                    stock: 20,
+                    description: '',
+                    autoDeliveryContent: ''
+                };
+                showProductModal.value = true;
+            };
+
+            const editProduct = (p) => {
+                isEditingMode.value = true;
+                productForm.value = { ...p };
+                showProductModal.value = true;
+            };
+
+            const saveProduct = () => {
+                const frm = productForm.value;
+                if (!frm.name.trim() || !frm.description.trim() || !frm.autoDeliveryContent.trim()) {
+                    alert('Harap isi semua kolom formulir produk digital Anda!');
+                    return;
+                }
+
+                if (isEditingMode.value) {
+                    // Update
+                    const idx = products.value.findIndex(p => p.id === frm.id);
+                    if (idx !== -1) {
+                        products.value[idx] = { ...products.value[idx], ...frm };
+                        pushLog('system', `Produk [${frm.name}] berhasil dimutakhirkan di basis data.`);
+                    }
+                } else {
+                    // Create
+                    frm.id = Date.now();
+                    frm.soldCount = 0;
+                    products.value.push({ ...frm });
+                    pushLog('system', `Produk digital baru [${frm.name}] berhasil diunggah.`);
+                }
+                showProductModal.value = false;
+            };
+
+            const deleteProduct = (id) => {
+                if (confirm('Apakah Anda yakin ingin menghapus produk digital ini dari sistem?')) {
+                    products.value = products.value.filter(p => p.id !== id);
+                    pushLog('system', `Produk ID: ${id} berhasil dieliminasi dari sistem inventory.`);
+                }
+            };
+
+
+            // --- CORE CONTROLLER INTERFACES AND INITIALIZERS ---
+            const toggleAutopilot = () => {
+                autopilotActive.value = !autopilotActive.value;
+                if (autopilotActive.value) {
+                    pushLog('system', `BOT AUTOPILOT AKTIF: Mulai mengamati log masuk simulasi secara real-time.`);
+                    
+                    // Start simulated background ticker for lifelikeness
+                    autopilotInterval = setInterval(() => {
+                        const randomLogs = [
+                            "Memantau server database Lynk.id...",
+                            "AI menyeimbangkan performa token Gemini API...",
+                            "Menelusuri interaksi pembeli potensial di market digital...",
+                            "Semua sistem operasional aman. Mengawasi antrean inbox."
+                        ];
+                        const randomSelected = randomLogs[Math.floor(Math.random() * randomLogs.length)];
+                        pushLog('system', randomSelected);
+                    }, 12000);
+
+                } else {
+                    pushLog('system', `BOT AUTOPILOT DINAKTIFKAN. Sesi kembali ke kontrol manual.`);
+                    if (autopilotInterval) {
+                        clearInterval(autopilotInterval);
+                    }
+                }
+            };
+
+            const clearTerminalLogs = () => {
+                terminalLogs.value = [];
+            };
+
+            const clearLogDatabase = () => {
+                logDatabase.value = [];
+                pushLog('system', `Riwayat chat simulasi pada cockpit berhasil dibersihkan.`);
+            };
+
+            const scrollToBottom = () => {
+                nextTick(() => {
+                    if (chatContainer.value) {
+                        chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+                    }
+                });
+            };
+
+            const formatNumber = (num) => {
+                if (!num) return '0';
+                return num.toLocaleString('id-ID');
+            };
+
+
+            // --- MOUNTED INITIALIZER ---
+            onMounted(() => {
+                pushLog('system', `Inisialisasi Cockpit Nexus AI selesai.`);
+                pushLog('system', `Sistem local database seeding: 4 produk digital bawaan berhasil dimuat.`);
+                pushLog('system', `Integrasi Toko Lynk.id siap digunakan.`);
+                
+                // Read local caching settings
+                const savedSet = localStorage.getItem('nexus_agent_settings');
+                if (savedSet) {
+                    try { agentSettings.value = JSON.parse(savedSet); } catch(e) {}
+                }
+
+                // Push initial test greetings for default user
+                const now = new Date();
+                const nowStr = now.toTimeString().split(' ')[0];
+                logDatabase.value.push({
+                    id: 'init-1',
+                    customerName: 'Budi Santoso',
+                    sender: 'CUSTOMER',
+                    message: "Halo, saya sedang mencari lisensi Windows 11 murah bergaransi apakah ada?",
+                    time: nowStr
+                });
+            });
+
+            return {
+                activeTab,
+                showConfig,
+                apiKey,
+                showApiKey,
+                lynkShopUrl,
+                autopilotActive,
+                totalEarnings,
+                agentSettings,
+                products,
+                simulators,
+                activeCustomer,
+                newCustomerName,
+                transactions,
+                isGeneratingResponse,
+                customerInputMessage,
+                chatMessagesWithCustomer,
+                terminalLogs,
+                copywriterProductId,
+                copywriterChannel,
+                isGeneratingPromo,
+                generatedPromoText,
+                targetNiche,
+                isSearchingClients,
+                prospectsList,
+                showProductModal,
+                isEditingMode,
+                productForm,
+                chatContainer,
+                terminalContainer,
+                toggleAutopilot,
+                saveCredentials,
+                saveSettings,
+                selectCustomer,
+                addNewCustomer,
+                sendCustomerMsg,
+                generatePromoScript,
+                copyPromoText,
+                scanProspectClients,
+                pitchProspectAndConvert,
+                openAddProductModal,
+                editProduct,
+                saveProduct,
+                deleteProduct,
+                clearTerminalLogs,
+                clearLogDatabase,
+                formatNumber,
+                getLogStyle
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

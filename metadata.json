@@ -1,0 +1,6 @@
+{
+  "name": "Agen Bisnis AI",
+  "description": "Asisten AI agent cerdas mandiri untuk otomatisasi bisnis produk digital, memproses pesanan dan melayani pelanggan otomatis.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
