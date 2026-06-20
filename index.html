@@ -1122,7 +1122,7 @@ Tanggapi pesan di atas sesuai systemInstruction. Tulis respon sekarang:
                     if (isKeyConfigured) {
                         pushLog('gemini_api', `Mengirim query ke REST Endpoint Google Gemini-1.5-Flash...`);
                         
-                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.value.trim()}`, {
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.value.trim()}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1315,7 +1315,7 @@ Tugas Anda adalah menulis naskah/copy promosi persuasif berbahasa Indonesia untu
 Buat naskah promosi eksklusif yang sangat disesuaikan dengan saluran promosi: '${copywriterChannel.value}'.
 Format promo harus siap pakai, rapi, menarik, menggunakan emoji yang relevan, memiliki hook pencuri perhatian di awal, rincian benefit utama, call-to-action yang kuat mengarah ke link toko '${lynkShopUrl.value}', dan batas waktu kelangkaan (scarcity).
 `;
-                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.value.trim()}`, {
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.value.trim()}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
